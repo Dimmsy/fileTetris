@@ -1,0 +1,27 @@
+Score: ###
+----------
+----------
+----------
+----------
+----------
+----------
+----------
+----------
+----------
+----------
+----------
+----------
+@ XXYY S R
+
+======================
+Score: ### -> Score: {SCORE}
+
+-  - empty tile
+0  - fill tile
+X  - active block tile
+
+@  - Status (@ - move, ! - hit, # - froze)
+XX - Tetrino.x
+YY - Tetrino.y
+S  - Terino.shape -> blocks[S]
+R  - rotation (-1 cw, +1 ccw)
