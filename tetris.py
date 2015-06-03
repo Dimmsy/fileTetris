@@ -43,6 +43,7 @@ def tetris():
 
 	#Create block
 	activeBlock = Tetrino()
+	firstFrame = True
 
 	#----------------
 	#---- Game Loop -
@@ -60,7 +61,8 @@ def tetris():
 		#		activeBlock.moveDown(h, staticField)
 		#		activeBlock.state = 'froze'
 
-		activeBlock.update(staticField)
+		if not firstFrame: activeBlock.update(staticField)
+		else: firstFrame=False
 
 		#If active block is frozen, add to static field
 		if activeBlock.state == 'froze':
@@ -80,10 +82,10 @@ def tetris():
 		print 'Score: ###'
 		printField(dynamicField)
 		print '@ XX YY S R'
-		print '^ block coords'
-		for block in activeBlock.shape:
-			print '({}, {})'.format(block[0]+activeBlock.x,
-									block[1]+activeBlock.y)
+		#print '^ block coords'
+		#for block in activeBlock.shape:
+		#	print '({}, {})'.format(block[0]+activeBlock.x,
+		#							block[1]+activeBlock.y)
 		#wait a 'frame'
 		#sleep(gameUpdateRate)
 		#wait for input
