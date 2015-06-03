@@ -1,4 +1,5 @@
 import random
+import math
 from time import sleep
 
 def tetris():
@@ -15,8 +16,8 @@ def tetris():
 
 	#Symbols
 	global empty, fill
-	empty = '_'
-	fill = 'O'
+	empty = '-'
+	fill = '0'
 
 	# ~~~~~ Tetrinos
 	global blocks
@@ -51,15 +52,25 @@ def tetris():
 	frameCommand = ''
 	while 1:
 		## Read input
-		#for charac in frameCommand:
-		#	if charac == 'l': activeBlock.moveInX(1, staticField)
-		#	elif charac == 'a': activeBlock.moveInX(-1, staticField)
-		#	elif charac == 'p': activeBlock.rotate('cw',staticField)
-		#	elif charac == 'q': activeBlock.rotate('ccw',staticField)
-		#	elif charac == 'd': activeBlock.moveDown(1, staticField)
-		#	elif charac == 'D': 
-		#		activeBlock.moveDown(h, staticField)
-		#		activeBlock.state = 'froze'
+
+		#Random input
+		inputs = 'aqlpd'
+		frameCommand=''
+		inputStringLen = int(math.sqrt(random.randrange(100)))
+		for _ in range(inputStringLen):
+			frameCommand = frameCommand+inputs[random.randrange(len(inputs))]
+		for charac in frameCommand:
+			if charac == 'l': activeBlock.moveInX(1, staticField)
+			elif charac == 'a': activeBlock.moveInX(-1, staticField)
+			elif charac == 'p': activeBlock.rotate('cw',staticField)
+			elif charac == 'q': activeBlock.rotate('ccw',staticField)
+			elif charac == 'd': activeBlock.moveDown(1, staticField)
+			elif charac == 'D': 
+				activeBlock.moveDown(h, staticField)
+				activeBlock.state = 'froze'
+
+
+
 
 		if not firstFrame: activeBlock.update(staticField)
 		else: firstFrame=False
@@ -87,9 +98,9 @@ def tetris():
 		#	print '({}, {})'.format(block[0]+activeBlock.x,
 		#							block[1]+activeBlock.y)
 		#wait a 'frame'
-		#sleep(gameUpdateRate)
+		sleep(gameUpdateRate)
 		#wait for input
-		frameCommand = raw_input('Input: ')
+		#frameCommand = raw_input('Input: ')
 
 ################## CLASSES #################
 class Tetrino:
