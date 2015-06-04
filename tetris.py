@@ -3,6 +3,8 @@ import math
 from time import sleep
 
 def tetris():
+	GAMETYPE = 'random'
+		#Types: manual , random
 	#Game constants
 	gameUpdateRate = .1 #seconds between frames
 
@@ -18,6 +20,10 @@ def tetris():
 	global empty, fill
 	empty = '-'
 	fill = '0'
+
+	frozeSym='#'
+	hitSym='!'
+	moveSym='~'
 
 	# ~~~~~ Tetrinos
 	global blocks
@@ -51,14 +57,16 @@ def tetris():
 	#----------------
 	frameCommand = ''
 	while 1:
-		## Read input
-
 		#Random input
-		inputs = 'aqlpd'
-		frameCommand=''
-		inputStringLen = int(math.sqrt(random.randrange(100)))
-		for _ in range(inputStringLen):
-			frameCommand = frameCommand+inputs[random.randrange(len(inputs))]
+		if GAMETYPE == 'manual':
+			frameCommand=raw_input('Input:  ')
+		elif GAMETYPE == 'random':
+			inputs = 'aqlpd'
+			frameCommand=''
+			inputStringLen = int(math.sqrt(random.randrange(100)))
+			for _ in range(inputStringLen):
+				newCommand = inputs[random.randrange(len(inputs))]
+				frameCommand = frameCommand+newCommand
 		for charac in frameCommand:
 			if charac == 'l': activeBlock.moveInX(1, staticField)
 			elif charac == 'a': activeBlock.moveInX(-1, staticField)
@@ -68,9 +76,6 @@ def tetris():
 			elif charac == 'D': 
 				activeBlock.moveDown(h, staticField)
 				activeBlock.state = 'froze'
-
-
-
 
 		if not firstFrame: activeBlock.update(staticField)
 		else: firstFrame=False
@@ -90,9 +95,28 @@ def tetris():
 		dynamicField = updateField(staticField,activeBlock)
 			
 		#print field to console
-		print 'Score: ###'
+		if SCORE > 999: SCORE=999
+		print 'Score: {}'.format(SCORE)
 		printField(dynamicField)
-		print '@ XX YY S R'
+			#status line
+			# move/hit/froze, x pos, y pos, shape, rotation
+		statusLine = ''
+		#Active block status
+		if activeBlock.state=='move':
+			statusLine = statusLine+moveSym
+		elif activeBlock.state=='hit':
+			statusLine = statusLine+hitSym
+		elif activeBlock.state=='froze':
+			statusLine = statusLine+frozeSym
+
+		#x coord
+		statusLine = statusLine+' {}'.format(activeBlock.x)
+		#y coord
+		statusLine = statusLine+' {}'.format(activeBlock.y)
+		#shape ndx
+		statusLine = statusLine+' {}'.format(activeBlock.blockNdx)
+		
+		print statusLine+'R'
 		#print '^ block coords'
 		#for block in activeBlock.shape:
 		#	print '({}, {})'.format(block[0]+activeBlock.x,
@@ -107,7 +131,8 @@ class Tetrino:
 	state = 'move' # 'froze' 'hit'
 	def __init__(self):
 		#Define shape
-		self.shape = blocks[random.randrange(len(blocks))]
+		self.blockNdx = random.randrange(len(blocks))
+		self.shape = list(blocks[self.blockNdx])
 		#spawn at top of board
 		self.x = 4
 		self.y = 0
@@ -181,9 +206,10 @@ class Tetrino:
 			if blocky == h:
 				return True
 			#check if above solid block
-			elif blocky < h: 
+			elif blocky < h and blocky>=0: 
 				if field[blocky][blockx] == fill:
 					return True
+		return False
 	def collideBelow(self):
 		if self.state=='move': self.state='hit'
 		elif self.state=='hit': 
@@ -199,6 +225,7 @@ def clearLines(field):
 		if field[i] == [fill]*w:
 			#clear out row... hmm
 			rowsToClear.append(i)
+			SCORE += 1
 
 	#And here we construct a new field!
 	offset = 0
