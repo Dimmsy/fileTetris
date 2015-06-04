@@ -17,9 +17,10 @@ def tetris():
 	w, h = 10, 12
 
 	#Symbols
-	global empty, fill
+	global empty, fill, active
 	empty = '-'
 	fill = '0'
+	active = '@'
 
 	frozeSym='#'
 	hitSym='!'
@@ -250,9 +251,11 @@ def updateField(field,block):
 			outField[i].append(field[i][j])
 			
 	#Draw field with block
+	if block.state == 'froze': blockSym = fill
+	else: blockSym = active
 	for coord in block.shape:
 		if block.y+coord[1]>=0 and block.y+coord[1]<=h-1:
-			outField[block.y+coord[1]][block.x+coord[0]]=fill
+			outField[block.y+coord[1]][block.x+coord[0]]=blockSym
 	return outField
 	
 def checkForFailure(field,block):
