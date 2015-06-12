@@ -4,14 +4,11 @@ from time import sleep
 
 def tetris():
 	GAMETYPE = ['random','console']
+	#GAMETYPE = ['random','file']
 		#Types: manual , random
 		#		console, file
-	#Game constants
-	gameUpdateRate = .1 #seconds between frames
 
 	global SCORE
-
-	SCORE=0
 
 	#Field width and height
 	global w, h
@@ -44,15 +41,63 @@ def tetris():
 				sqr_block,li_block,t_block,
 				l_l_block,l_r_block]
 	# ~~~~~~~~
+	if GAMETYPE[1]=='file':
+		#read file
+		boardFile=open('gameboard_active.txt','r+')
+		prevFrame=boardFile.readlines()
+		boardFile.close()
 
-	#Create field
-	staticField = [None]*h
-	for i in range(h):
-		staticField[i]=[empty]*10
+		#read score:
+		SCORE = int(prevFrame[0].split()[1])
+		
+		#bottom line
+		bottomLine=prevFrame[len(prevFrame)-1].split()
 
-	#Create block
-	activeBlock = Tetrino()
-	firstFrame = True
+		x=int(bottomLine[1])
+		y=int(bottomLine[2])
+		blockNdx=int(bottomLine[3][0])
+		r=int(bottomLine[3][1])
+
+		#Build active board
+		staticField=[]
+		for i in range(1,13):
+			staticField.append([])
+			for charac in prevFrame[i]:
+				if charac == fill:
+					staticField[i-1].append(fill)
+				else: staticField[i-1].append(empty)
+
+		#generate tetrino
+		if prevFrame[13][1]=='#':
+			#New block
+			activeBlock=Tetrino()
+		else:
+			activeBlock = Tetrino(x,y,r)
+			activeBlock.blockNdx = blockNdx
+			activeBlock.shape = list(blocks[blockNdx])
+			#block status
+			if prevFrame[13][1]=='!':
+				activeBlock.state='hit'
+			else: activeBlock.state='move'
+
+		firstFrame=False
+
+
+
+	if GAMETYPE[1]=='console':
+		#Game constants
+		gameUpdateRate = .1 #seconds between frames
+
+		SCORE=0
+
+		#Create field
+		staticField = [None]*h
+		for i in range(h):
+			staticField[i]=[empty]*10
+
+		#Create block
+		activeBlock = Tetrino()
+		firstFrame = True
 
 	#----------------
 	#---- Game Loop -
@@ -99,30 +144,46 @@ def tetris():
 			
 		#print field to console
 		if SCORE > 999: SCORE=999
-		print 'Score: {}'.format(SCORE)
-		printField(dynamicField)
+		scoreLine ='Score: {}'.format(SCORE)
+		print scoreLine
+		for line in fieldToStrings(dynamicField):
+			print line
 			#status line
 			# move/hit/froze, x pos, y pos, shape, rotation
 		print bottomStatusLine(activeBlock)
 
-		#wait a 'frame'
-		sleep(gameUpdateRate)
-		if GAMETYPE[0] == 'manual':
-			frameCommand=raw_input('Input:  ')
-		#wait for input
-		#frameCommand = raw_input('Input: ')
+		if GAMETYPE[1]=='console':
+			#wait a frame
+			if GAMETYPE[0] == 'manual':
+				#wait for input
+				frameCommand=raw_input('Input:  ')
+			else:
+				sleep(gameUpdateRate)
+		elif GAMETYPE[1]=='file':
+			#write out board to game file
+			boardFile=open('gameboard_active.txt','w')
+			boardFile.write('Score: {}\n'.format(SCORE))
+			for line in fieldToStrings(dynamicField):
+				boardFile.write(line+'\n')
+			boardFile.write(bottomStatusLine(activeBlock))
+
+			boardFile.close()
+			return
 
 ################## CLASSES #################
 class Tetrino:
 	state = 'move' # 'froze' 'hit'
-	rotation = 0
-	def __init__(self):
-		#Define shape
+	def __init__(self,x=4,y=0,rotation=0):
+		#choose random shape shape
 		self.blockNdx = random.randrange(len(blocks))
 		self.shape = list(blocks[self.blockNdx])
-		#spawn at top of board
-		self.x = 4
-		self.y = 0
+		#spawn
+		self.x = x
+		self.y = y
+		self.rotation = rotation
+		for _ in range(rotation):
+			self.rotate('ccw',force=True)
+
 	def update(self,field):
 		#Check collision
 		self.moveDown(1,field)
@@ -133,8 +194,9 @@ class Tetrino:
 			else: 
 				self.collideBelow()
 				return
-	def rotate(self,direc,field):
+	def rotate(self,direc,field=None,force=True):
 		#direc = cw, ccw
+		#force for when reading from file, just rotate
 		if self.shape == sqr_block: return
 		newShape = []
 		rot = 0
@@ -151,6 +213,9 @@ class Tetrino:
 				rot=1
 
 			newShape.append([newX,newY])
+		if force:
+			self.shape=list(newShape)
+			return
 		if not self.collisionAnywhere(newShape,field):
 			for i in range(len(newShape)):
 				self.shape[i] = newShape[i]
@@ -285,12 +350,14 @@ def checkForFailure(field,block):
 	return False
 		
 	# Prints field to console
-def printField(field):
+def fieldToStrings(field):
+	output = []
 	for i in range(len(field)):
 		row = ''
 		for j in range(len(field[i])):
 			row = row+field[i][j]
-		print row
+		output.append(row)
+	return output
 
 ################## Main function ###########
 if __name__ == '__main__':
