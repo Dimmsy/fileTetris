@@ -3,8 +3,9 @@ import math
 from time import sleep
 
 def tetris():
-	GAMETYPE = 'random'
+	GAMETYPE = ['random','console']
 		#Types: manual , random
+		#		console, file
 	#Game constants
 	gameUpdateRate = .1 #seconds between frames
 
@@ -22,6 +23,7 @@ def tetris():
 	fill = '0'
 	active = '@'
 
+	global frozeSym,hitSym,moveSym
 	frozeSym='#'
 	hitSym='!'
 	moveSym='~'
@@ -43,7 +45,6 @@ def tetris():
 				l_l_block,l_r_block]
 	# ~~~~~~~~
 
-
 	#Create field
 	staticField = [None]*h
 	for i in range(h):
@@ -58,10 +59,11 @@ def tetris():
 	#----------------
 	frameCommand = ''
 	while 1:
+		# FOR READING/WRITNG FILE
+		# file open
+		# read strings into 2d array
 		#Random input
-		if GAMETYPE == 'manual':
-			frameCommand=raw_input('Input:  ')
-		elif GAMETYPE == 'random':
+		if GAMETYPE[0] == 'random':
 			inputs = 'aqlpd'
 			frameCommand=''
 			inputStringLen = int(math.sqrt(random.randrange(100)))
@@ -101,35 +103,19 @@ def tetris():
 		printField(dynamicField)
 			#status line
 			# move/hit/froze, x pos, y pos, shape, rotation
-		statusLine = ''
-		#Active block status
-		if activeBlock.state=='move':
-			statusLine = statusLine+moveSym
-		elif activeBlock.state=='hit':
-			statusLine = statusLine+hitSym
-		elif activeBlock.state=='froze':
-			statusLine = statusLine+frozeSym
+		print bottomStatusLine(activeBlock)
 
-		#x coord
-		statusLine = statusLine+' {}'.format(activeBlock.x)
-		#y coord
-		statusLine = statusLine+' {}'.format(activeBlock.y)
-		#shape ndx
-		statusLine = statusLine+' {}'.format(activeBlock.blockNdx)
-		
-		print statusLine+'R'
-		#print '^ block coords'
-		#for block in activeBlock.shape:
-		#	print '({}, {})'.format(block[0]+activeBlock.x,
-		#							block[1]+activeBlock.y)
 		#wait a 'frame'
 		sleep(gameUpdateRate)
+		if GAMETYPE[0] == 'manual':
+			frameCommand=raw_input('Input:  ')
 		#wait for input
 		#frameCommand = raw_input('Input: ')
 
 ################## CLASSES #################
 class Tetrino:
 	state = 'move' # 'froze' 'hit'
+	rotation = 0
 	def __init__(self):
 		#Define shape
 		self.blockNdx = random.randrange(len(blocks))
@@ -151,21 +137,28 @@ class Tetrino:
 		#direc = cw, ccw
 		if self.shape == sqr_block: return
 		newShape = []
+		rot = 0
 		for i in range(len(self.shape)):
 			curX=self.shape[i][0]
 			curY=self.shape[i][1]
 			if direc=='cw':
 				newX=-curY
 				newY=curX
+				rot=-1
 			elif direc=='ccw':
 				newX=curY
 				newY=-curX
+				rot=1
 
 			newShape.append([newX,newY])
 		if not self.collisionAnywhere(newShape,field):
 			for i in range(len(newShape)):
 				self.shape[i] = newShape[i]
 			self.state = 'move'
+			self.rotation+=rot
+			if self.rotation <0: self.rotation+=4
+			elif self.rotation >3: self.rotation-=4
+
 	def collisionAnywhere(self,block,field):
 		for b in block:
 			if self.x+b[0] >= w or self.x+b[0] < 0:
@@ -218,6 +211,26 @@ class Tetrino:
 	
 
 ################# FUNCTIONS ################
+def bottomStatusLine(block):
+	global moveSym, hitSym, frozeSym
+	statusLine=''
+	#Active block status
+	if block.state=='move':
+		statusLine = statusLine+moveSym
+	elif block.state=='hit':
+		statusLine = statusLine+hitSym
+	elif block.state=='froze':
+		statusLine = statusLine+frozeSym
+
+	#x coord
+	statusLine = statusLine+' {}'.format(block.x)
+	#y coord
+	statusLine = statusLine+' {}'.format(block.y)
+	#shape ndx
+	statusLine = statusLine+' {}'.format(block.blockNdx)
+	
+	return statusLine+'{}'.format(block.rotation)
+
 def clearLines(field):
 	global SCORE
 
@@ -253,9 +266,13 @@ def updateField(field,block):
 	#Draw field with block
 	if block.state == 'froze': blockSym = fill
 	else: blockSym = active
+
 	for coord in block.shape:
-		if block.y+coord[1]>=0 and block.y+coord[1]<=h-1:
-			outField[block.y+coord[1]][block.x+coord[0]]=blockSym
+		row =block.y+coord[1]
+		col = block.x+coord[0]
+		if row>=0 and row<=h-1:
+			if outField[row][col]!=fill:
+				outField[row][col]=blockSym
 	return outField
 	
 def checkForFailure(field,block):
